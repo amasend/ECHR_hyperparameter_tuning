@@ -1,0 +1,1 @@
+[[0, 0, 0], {"activation": "relu", "lr": 2.0258436171461986e-06, "num_fc_units_4": 13, "num_fc_units_1": 1379, "optimizer": "Adadelta", "dropout_rate_4": 0.39091334269804734, "dropout_rate_1": 0.04830101652483865, "dropout_rate_2": 0.24707015868716026, "num_fc_units_2": 413, "num_fc_units_3": 73, "dropout_rate_3": 0.06310867950112486}, {"model_based_pick": false}]
