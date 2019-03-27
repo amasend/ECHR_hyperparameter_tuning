@@ -3,12 +3,13 @@ import pprint
 import zipfile
 import onedrivesdk
 import shutil
+import time
 
 
 class OneDriveAPI:
     """Class to interact with OneDrive API."""
     # TODO: Implement method to upload files to OneDrive
-    def __init__(self):
+    def __init__(self, get_ids=True):
         self.client_id='6a2475f8-6ae9-4c3d-a115-2a67794947df'
         self.api_base_url='https://api.onedrive.com/v1.0/'
         self.scopes=['wl.signin', 'wl.offline_access', 'onedrive.readwrite']
@@ -23,13 +24,20 @@ class OneDriveAPI:
         self.token = None
 
         # OAuth part to One Drive
-        self.http_provider = onedrivesdk.HttpProvider()
-        self.auth_provider = onedrivesdk.AuthProvider(self.http_provider, self.client_id, self.scopes)
-        self.auth_provider.load_session()
-        self.auth_provider.refresh_token()
-        self.client = onedrivesdk.OneDriveClient(self.base_url, self.auth_provider, self.http_provider)
-        # Check files IDs
-        self.get_files_ids()
+        while True:
+            try:
+                self.http_provider = onedrivesdk.HttpProvider()
+                self.auth_provider = onedrivesdk.AuthProvider(self.http_provider, self.client_id, self.scopes)
+                self.auth_provider.load_session()
+                self.auth_provider.refresh_token()
+                self.client = onedrivesdk.OneDriveClient(self.base_url, self.auth_provider, self.http_provider)
+                # Check files IDs
+                if get_ids:
+                    self.get_files_ids()
+                break
+            except Exception as e:
+                print(e)
+                continue
 
     def get_files_ids(self):
         """Check files IDs on One Drive and create local dictionary to further compute."""
@@ -70,6 +78,14 @@ class OneDriveAPI:
             self.remove_file('{}{}'.format(self.data_path, article))
             print('{} {} {} downloaded'.format(self.n_gram, self.token, article))
 
+    def upload_all_results(self):
+        """Uploads all results to OneDrive"""
+        try:
+            shutil.make_archive('all_results_packed', 'zip', 'all_results')
+            self.client.item(drive='me', id='888296E6B085BF40!1702').children['all_results.zip'].upload('.\\all_results_packed.zip')
+            self.remove_file('.\\all_results_packed.zip')
+        except Exception as e:
+            print(e)
 
     def remove_data(self):
         """Clean data folder, prepare for new data."""
@@ -80,7 +96,7 @@ class OneDriveAPI:
     def remove_file(file_):
         try:
             os.remove(file_)
-            print("File Removed!")
+            print("File Removed! {}".format(file_))
         except Exception as e:
             print(e)
             exit()
@@ -101,4 +117,11 @@ class OneDriveAPI:
             print(e)
             exit()
 
+
+if __name__ == "__main__":
+    """Use only for uploading results to One Driive (periodically)"""
+    while True:
+        file_manager = OneDriveAPI(get_ids=False)  # Initiate file manager with files IDs
+        file_manager.upload_all_results()
+        time.sleep(60*5)
 

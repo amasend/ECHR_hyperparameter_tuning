@@ -1,5 +1,0 @@
-[[0, 0, 0], {"n_estimators": 1, "max_depth": 212, "criterion": "entropy"}, {"model_based_pick": false}]
-[[1, 0, 0], {"n_estimators": 365, "max_depth": 133, "criterion": "entropy"}, {"model_based_pick": false}]
-[[2, 0, 0], {"n_estimators": 46, "max_depth": 883, "criterion": "entropy"}, {"model_based_pick": false}]
-[[3, 0, 0], {"n_estimators": 4, "max_depth": 118, "criterion": "entropy"}, {"model_based_pick": false}]
-[[4, 0, 0], {"n_estimators": 60, "max_depth": 161, "criterion": "gini"}, {"model_based_pick": false}]
