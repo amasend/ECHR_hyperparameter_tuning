@@ -2,6 +2,8 @@
 # European Court of Human Rights OpenData ML Classification Hyperparameter Tuning  
 Under construction...  
 
+Docker image with early version available at: https://hub.docker.com/r/amasend/echr
+
 It is recommendet to have an [Anaconda with python 3.5](https://www.anaconda.com/distribution/#download-section) environment installed with preinstalled data science packages like: pandas, numpy, scikit-learn etc.  
 Dependencies:  
 ```bash
