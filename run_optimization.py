@@ -11,7 +11,6 @@ if __name__ == "__main__":
     """The main process for file and optimizer management."""
     # Start periodic uploads to One Drive (all results)
     upload = sub.Popen('python onedrive_api.py', shell=True)
-    upload.wait()
     for n_gram in _N_GRAMS_:
         for tokens in _TOKENS_:
             file_manager = OneDriveAPI()  # Initiate file manager with files IDs

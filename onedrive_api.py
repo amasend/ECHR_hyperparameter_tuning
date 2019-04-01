@@ -8,7 +8,6 @@ import time
 
 class OneDriveAPI:
     """Class to interact with OneDrive API."""
-    # TODO: Implement method to upload files to OneDrive
     def __init__(self, get_ids=True):
         self.client_id='6a2475f8-6ae9-4c3d-a115-2a67794947df'
         self.api_base_url='https://api.onedrive.com/v1.0/'
