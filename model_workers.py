@@ -1,7 +1,7 @@
 # Usage of https://github.com/aquemy/ECHR-OD_loader from different directory
 import sys
-sys.path.insert(0, '/dev/ECHR-OD_loader/')
-sys.path.insert(0, '/dev/ECHR-OD_loader/echr/')
+sys.path.insert(0, '../ECHR-OD_loader/')
+sys.path.insert(0, '../ECHR-OD_loader/echr/')
 import echr
 try:
     import keras
@@ -29,6 +29,10 @@ from hpbandster.core.worker import Worker
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+def n_components_search(data):
+    pca = PCA().fit(data)
+    print('All components computed')
+    return [i for i, val in enumerate(np.cumsum(pca.explained_variance_ratio_)) if val >= 0.95][0]
 
 def compute_tn(y_true, y_pred):
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
@@ -354,8 +358,11 @@ class KerasWorker(Worker):
         # Make process pipeline
         # std_clf = make_pipeline(StandardScaler(), PCA(n_components=config['num_pca']))
         # std_clf = make_pipeline(StandardScaler(), PCA(n_components=900))
-        std_clf = make_pipeline(StandardScaler())
-        self.X = std_clf.fit_transform(self.X.toarray())
+        scaler = StandardScaler()
+        self.X = scaler.fit_transform(self.X.toarray())
+        pca = PCA(n_components=n_components_search(self.X))
+        self.X = pca.fit_transform(self.X)
+        print('PCA computed')
 
     def compute(self, config: object, budget, working_directory, *args, **kwargs):
         """Compute method for each BOHB run evaluation.
@@ -375,19 +382,11 @@ class KerasWorker(Worker):
             model.add(Dropout(config['dropout_rate_1']))
             model.add(Dense(config['num_fc_units_2'], activation=config['activation']))
             model.add(Dropout(config['dropout_rate_2']))
-            model.add(Dense(config['num_fc_units_3'], activation=config['activation']))
-            model.add(Dropout(config['dropout_rate_3']))
-            model.add(Dense(config['num_fc_units_4'], activation=config['activation']))
-            model.add(Dropout(config['dropout_rate_4']))
             model.add(Dense(2, activation='softmax'))
 
             # Choose an optimizer to use
             if config['optimizer'] == 'Adam':
                 optimizer = keras.optimizers.Adam(lr=config['lr'])
-            elif config['optimizer'] == 'Adadelta':
-                optimizer = keras.optimizers.Adadelta(lr=config['lr'])
-            elif config['optimizer'] == 'RMSprop':
-                optimizer = keras.optimizers.RMSprop(lr=config['lr'])
             else:
                 optimizer = keras.optimizers.SGD(lr=config['lr'], momentum=config['sgd_momentum'])
 
@@ -399,7 +398,7 @@ class KerasWorker(Worker):
 
         # Wraps Keras model into sklearn classifier (this is a need for use with cross-validation)
         model = MyKerasClassifier(build_fn=keras_model,
-                                  epochs=int(budget),
+                                  epochs=int(budget)//50,
                                   batch_size=self.batch_size,
                                   verbose=0)
 
@@ -458,31 +457,23 @@ class KerasWorker(Worker):
         # cs.add_hyperparameters([num_pca])
 
         lr = CSH.UniformFloatHyperparameter('lr', lower=1e-6, upper=1e-1, default_value='1e-2', log=True)
-        optimizer = CSH.CategoricalHyperparameter('optimizer', ['Adam', 'SGD', 'Adadelta', 'RMSprop'])
+        optimizer = CSH.CategoricalHyperparameter('optimizer', ['Adam', 'SGD'])
         sgd_momentum = CSH.UniformFloatHyperparameter('sgd_momentum', lower=0.0, upper=0.99, default_value=0.9,
                                                       log=False)
-        dropout_rate_1 = CSH.UniformFloatHyperparameter('dropout_rate_1', lower=0.0, upper=0.5, default_value=0.2,
+        dropout_rate_1 = CSH.UniformFloatHyperparameter('dropout_rate_1', lower=0.0, upper=0.5, default_value=0.1,
                                                       log=False)
-        dropout_rate_2 = CSH.UniformFloatHyperparameter('dropout_rate_2', lower=0.0, upper=0.5, default_value=0.2,
-                                                        log=False)
-        dropout_rate_3 = CSH.UniformFloatHyperparameter('dropout_rate_3', lower=0.0, upper=0.5, default_value=0.2,
-                                                        log=False)
-        dropout_rate_4 = CSH.UniformFloatHyperparameter('dropout_rate_4', lower=0.0, upper=0.5, default_value=0.2,
+        dropout_rate_2 = CSH.UniformFloatHyperparameter('dropout_rate_2', lower=0.0, upper=0.5, default_value=0.1,
                                                         log=False)
         num_fc_units_1 = CSH.UniformIntegerHyperparameter('num_fc_units_1', lower=512, upper=2048,
                                                           default_value=1024, log=True)
         num_fc_units_2 = CSH.UniformIntegerHyperparameter('num_fc_units_2', lower=256, upper=512, default_value=256,
                                                           log=True)
-        num_fc_units_3 = CSH.UniformIntegerHyperparameter('num_fc_units_3', lower=64, upper=256, default_value=128,
-                                                          log=True)
-        num_fc_units_4 = CSH.UniformIntegerHyperparameter('num_fc_units_4', lower=8, upper=64, default_value=32,
-                                                          log=True)
         activation = CSH.CategoricalHyperparameter('activation', ['tanh', 'relu'])
 
         cs.add_hyperparameters([lr, optimizer, sgd_momentum, dropout_rate_1,
-                                dropout_rate_2, dropout_rate_3, dropout_rate_4,
+                                dropout_rate_2,
                                 num_fc_units_1, num_fc_units_2,
-                                num_fc_units_3, num_fc_units_4, activation])
+                                activation])
 
         # The hyperparameter sgd_momentum will be used,if the configuration
         # contains 'SGD' as optimizer.
@@ -518,8 +509,13 @@ class SVMWorker(Worker):
         # Make process pipeline
         # std_clf = make_pipeline(StandardScaler(), PCA(n_components=config['num_pca']))
         # std_clf = make_pipeline(StandardScaler(), PCA(n_components=900))
-        std_clf = make_pipeline(StandardScaler())
-        self.X = std_clf.fit_transform(self.X.toarray())
+        #std_clf = make_pipeline(StandardScaler())
+        #self.X = std_clf.fit_transform(self.X.toarray())
+        scaler = StandardScaler()
+        self.X = scaler.fit_transform(self.X.toarray())
+        pca = PCA(n_components=n_components_search(self.X))
+        self.X = pca.fit_transform(self.X)
+        print('PCA computed')
 
     def compute(self, config: object, budget, working_directory, *args, **kwargs):
         """Compute method for each BOHB run evaluation.
@@ -759,4 +755,3 @@ class MyKerasClassifier(KerasClassifier):
         if sample_weight is not None:
             kwargs['sample_weight'] = sample_weight
         return super(KerasClassifier, self).fit(x, y, **kwargs)
-
