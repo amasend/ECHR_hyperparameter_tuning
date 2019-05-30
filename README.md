@@ -78,3 +78,38 @@ python run_optimization.py --flavors --models --n_grams --tokens --onedrive --da
   
 Please have in mind that computation time for all combinations is really huge. By runnig this experiment with a default parameters you should be aware that each n_gram and token is computed separetly (one after another), only all models and flavors are multiprocessed.
 
+# Generating results plots  
+All components are under '/different_models' directory.  
+After generating all results or partial results we can make plots of that results for better understanding.  
+```bash
+python show_results.py --results_path "path_to_results_folder" --model "model_name" --n_grams "number_of_grams" --tokens "number_of_tokens" --flavor "flavor_name" --metric "metric_name_to_display" --option "which_plot_to_display"
+```  
+There are couple of methods implemented for user use and based on that, we can plot as follows:  
+
+ - best new results comparison per model and n-gram (after closing one plot, another will appear for the next n-gram)
+
+```bash
+python show_results.py --results_path "all_results" --model "random_forest" --metric "test_mean_c_MCC" --option "new_best_results"
+```  
+<img src="https://github.com/amasend/ECHR_hyperparameter_tuning/blob/master/plots/new_results_best.PNG"/>
+
+ - old best results vs new results (old best among all models, new best only from one model), per n-gram
+
+```bash
+python show_results.py --results_path "all_results" --model "random_forest" --metric "test_mean_c_MCC" --option "old_vs_new" --n_grams 5
+```  
+<img src="https://github.com/amasend/ECHR_hyperparameter_tuning/blob/master/plots/old_best_vs_new.png"/>
+
+ - normalized confusion matrices (only for new results)
+
+```bash
+python show_results.py --results_path "all_results" --model "random_forest" --metric "test_mean_c_MCC" --option "confusion_matrix" --n_grams 5 --tokens 5000
+```  
+<img src="https://github.com/amasend/ECHR_hyperparameter_tuning/blob/master/plots/confusion_matrix.png"/>
+
+ - computing times (run times) per flavor and per optimizer run
+
+```bash
+python show_results.py --results_path "all_results" --model "random_forest" --metric "test_mean_c_MCC" --option "computing_times" --n_grams 5 --tokens 5000
+```  
+<img src="https://github.com/amasend/ECHR_hyperparameter_tuning/blob/master/plots/computing_times.png"/>
